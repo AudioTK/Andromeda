@@ -4,7 +4,7 @@ CXXFLAGS= -I /Users/matthieu/local/lib -I /Users/matthieu/local/include -I /User
 
 SRC_FILES := $(wildcard *.cir)
 CPP_FILES := $(patsubst %.cir,%.cpp,$(SRC_FILES)) 
-EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) # generate_full.exe
+EXE_FILES := $(patsubst %.cpp,%.exe,$(CPP_FILES)) generate_full.exe
 DAT_FILES := $(patsubst %.exe,%.dat,$(EXE_FILES))
 PNG_FILES := $(patsubst %.exe,%.png,$(EXE_FILES))
 
@@ -17,13 +17,7 @@ all: $(EXE_FILES) $(CPP_FILES) $(DAT_FILES) $(PNG_FILES)
 	${CXX} -std=c++17 -O3 -DNDEBUG $< generate.cpp -o $@ $(CXXFLAGS) -lATKCore -lATKModelling
 
 generate_full.exe: generate_full.cpp
-	${CXX} -std=c++17 -O3 -DNDEBUG $< ../MT2/Source/0*.cpp -o $@ $(CXXFLAGS) -lATKCore -lATKEQ -lATKTools -lATKModelling
-
-test_high_svf.exe: test_high_svf.cpp
-	${CXX} -std=c++17 -O3 -DNDEBUG $< -o $@ $(CXXFLAGS) -lATKCore -lATKEQ -lATKTools
-
-test_mid_svf.exe: test_mid_svf.cpp
-	${CXX} -std=c++17 -O3 -DNDEBUG $< -o $@ $(CXXFLAGS) -lATKCore -lATKEQ -lATKTools
+	${CXX} -std=c++17 -O3 -DNDEBUG $< ../Andromeda/Source/0*.cpp -o $@ $(CXXFLAGS) -lATKCore -lATKEQ -lATKTools -lATKModelling
 
 %.dat: %.exe
 	./$< $@

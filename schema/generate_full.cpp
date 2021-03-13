@@ -1,4 +1,4 @@
-#include "../MT2/Source/static_elements.h"
+#include "../Andromeda/Source/static_elements.h"
 
 #include <ATK/Core/InPointerFilter.h>
 #include <ATK/Core/OutPointerFilter.h>
@@ -29,56 +29,56 @@ int main(int argc, const char** argv)
   }
 
   ATK::InPointerFilter<double> inFilter(input.data(), 1, PROCESSSIZE, false);
-  std::unique_ptr<ATK::ModellerFilter<double>> highPassFilter = MT2::createStaticFilter_stage1();
+  std::unique_ptr<ATK::ModellerFilter<double>> bandPassFilter = Andromeda::createStaticFilter_stage1();
   ATK::OversamplingFilter<double, ATK::Oversampling6points5order_8<double>> oversamplingFilter;
-  std::unique_ptr<ATK::ModellerFilter<double>> preDistortionToneShapingFilter = MT2::createStaticFilter_stage2();
-  std::unique_ptr<ATK::ModellerFilter<double>> bandPassFilter = MT2::createStaticFilter_stage3();
-  std::unique_ptr<ATK::ModellerFilter<double>> distLevelFilter = MT2::createStaticFilter_stage4();
-  std::unique_ptr<ATK::ModellerFilter<double>> distFilter = MT2::createStaticFilter_stage5();
+  std::unique_ptr<ATK::ModellerFilter<double>> distortionFilter = Andromeda::createStaticFilter_stage2();
+  std::unique_ptr<ATK::ModellerFilter<double>> toneShapingOverdriveFilter = Andromeda::createStaticFilter_stage3();
   ATK::IIRFilter<ATK::ButterworthLowPassCoefficients<double>> lowpassFilter;
   ATK::DecimationFilter<double> decimationFilter;
+  std::unique_ptr<ATK::ModellerFilter<double>> highPassFilter = Andromeda::createStaticFilter_stage4();
+  std::unique_ptr<ATK::ModellerFilter<double>> bandPass2Filter = Andromeda::createStaticFilter_stage5();
   ATK::OutPointerFilter<double> outFilter(output.data(), 1, PROCESSSIZE, false);
 
-  highPassFilter->set_input_port(highPassFilter->find_input_pin("vin"), &inFilter, 0);
-  oversamplingFilter.set_input_port(0, highPassFilter.get(), highPassFilter->find_dynamic_pin("vout"));
-  preDistortionToneShapingFilter->set_input_port(
-      preDistortionToneShapingFilter->find_input_pin("vin"), &oversamplingFilter, 0);
-  bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"),
-      preDistortionToneShapingFilter.get(),
-      preDistortionToneShapingFilter->find_dynamic_pin("vout"));
-  distLevelFilter->set_input_port(
-      distLevelFilter->find_input_pin("vin"), bandPassFilter.get(), bandPassFilter->find_dynamic_pin("vout"));
-  distFilter->set_input_port(
-      distFilter->find_input_pin("vin"), distLevelFilter.get(), distLevelFilter->find_dynamic_pin("vout"));
-  lowpassFilter.set_input_port(0, distFilter.get(), distFilter->find_dynamic_pin("vout"));
+  bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"), &inFilter, 0);
+  oversamplingFilter.set_input_port(0, bandPassFilter.get(), bandPassFilter->find_dynamic_pin("vout"));
+  distortionFilter->set_input_port(distortionFilter->find_input_pin("vin"), &oversamplingFilter, 0);
+  toneShapingOverdriveFilter->set_input_port(toneShapingOverdriveFilter->find_input_pin("vin"),
+      distortionFilter.get(),
+      distortionFilter->find_dynamic_pin("vout"));
+  lowpassFilter.set_input_port(
+      0, toneShapingOverdriveFilter.get(), toneShapingOverdriveFilter->find_dynamic_pin("vout"));
   decimationFilter.set_input_port(0, &lowpassFilter, 0);
-  outFilter.set_input_port(0, &decimationFilter, 0);
+  highPassFilter->set_input_port(highPassFilter->find_input_pin("vin"), decimationFilter, 0);
+  bandPass2Filter->set_input_port(
+      bandPass2Filter->find_input_pin("vin"), highPassFilter.get(), highPassFilter->find_dynamic_pin("vout"));
+  outFilter.set_input_port(0, bandPass2Filter.get(), bandPass2Filter->find_dynamic_pin("vout"));
 
   lowpassFilter.set_cut_frequency(20000);
   lowpassFilter.set_order(6);
 
   inFilter.set_input_sampling_rate(SAMPLING_RATE);
   inFilter.set_output_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_input_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_output_sampling_rate(SAMPLING_RATE);
+  bandPassFilter->set_input_sampling_rate(SAMPLING_RATE);
+  bandPassFilter->set_output_sampling_rate(SAMPLING_RATE);
   oversamplingFilter.set_input_sampling_rate(SAMPLING_RATE);
   oversamplingFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  preDistortionToneShapingFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  preDistortionToneShapingFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  bandPassFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  bandPassFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distLevelFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distLevelFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
-  distFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+  distortionFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+  distortionFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+  toneShapingOverdriveFilter->set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
+  toneShapingOverdriveFilter->set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   lowpassFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   lowpassFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   decimationFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   decimationFilter.set_output_sampling_rate(SAMPLING_RATE);
+  highPassFilter->set_input_sampling_rate(SAMPLING_RATE);
+  highPassFilter->set_output_sampling_rate(SAMPLING_RATE);
+  bandPass2Filter->set_input_sampling_rate(SAMPLING_RATE);
+  bandPass2Filter->set_output_sampling_rate(SAMPLING_RATE);
   outFilter.set_input_sampling_rate(SAMPLING_RATE);
   outFilter.set_output_sampling_rate(SAMPLING_RATE);
 
-  distLevelFilter->set_parameter(0, 0.1);
+  distortionFilter->set_parameter(0, 0.1);
+  toneShapingOverdriveFilter->set_parameter(0, 0.5);
 
   for(gsl::index i = 0; i < PROCESSSIZE; i += 1024)
   {

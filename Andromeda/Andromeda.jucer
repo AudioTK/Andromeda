@@ -4,7 +4,9 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               pluginFormats="buildAUv3,buildStandalone,buildVST3" pluginManufacturer="Matthieu Brucher"
               pluginManufacturerCode="MatB" aaxIdentifier="com.MatthieuBrucher.Andromeda"
-              pluginAUExportPrefix="ATKAndromeda">
+              pluginAUExportPrefix="ATKAndromeda" version="1.0" companyName="Matthieu Brucher"
+              companyWebsite="https://www.audio-tk.com" defines="JUCE_VST3_CAN_REPLACE_VST2=0&#10;ATK_NO_FFT"
+              cppLanguageStandard="17" pluginCode="Ndyh" bundleIdentifier="com.MatthieuBrucher.Andromeda">
   <MAINGROUP id="wEbNGh" name="Andromeda">
     <GROUP id="{3B08DEC9-764A-57B9-36BD-EF4A28C78273}" name="Source">
       <FILE id="cOk5Bi" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -18,7 +20,8 @@
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" xcodeValidArchs="arm64,arm64e,x86_64"
+               hardenedRuntime="1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="ATKAndromeda"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="ATKAndromeda"/>
