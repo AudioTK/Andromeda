@@ -77,7 +77,7 @@ int main(int argc, const char** argv)
   outFilter.set_input_sampling_rate(SAMPLING_RATE);
   outFilter.set_output_sampling_rate(SAMPLING_RATE);
 
-  distortionFilter->set_parameter(0, 0.1);
+  distortionFilter->set_parameter(0, 0.5);
   toneShapingOverdriveFilter->set_parameter(0, 0.5);
 
   for(gsl::index i = 0; i < PROCESSSIZE; i += 1024)
