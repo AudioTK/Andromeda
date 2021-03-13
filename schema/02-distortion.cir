@@ -1,0 +1,18 @@
+*
+Vin	Vin	0	AC	1V
+*
+Z2A	1 Vin	Vout
+C5	0	5	2.2u
+PBASS	5	5	4	50K
+R8	4	1	1.5k
+R7	3	1	820
+C4	0	3	82n
+D1	1	Vout	N914
+D2	Vout	1	N914
+C3	1	Vout	120p
+R6	Vout	2	1.8k
+PGAIN	1	2	Vout	250k
+
+.model N914 d (Is=2.52n Rs=.568 N=1.752 Cjo=4p M=.4 tt=20n Iave=200m Vpk=75)
+
+*

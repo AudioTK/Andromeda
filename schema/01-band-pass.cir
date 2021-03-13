@@ -1,0 +1,8 @@
+*
+Vin	Vin	0	AC	1V
+*
+C1	Vin	1	68n
+R4	1	Vout	2.7K
+R5	0	Vout	10k
+C2	0	Vout	22n
+*

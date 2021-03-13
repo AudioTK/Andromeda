@@ -1,0 +1,11 @@
+*
+Vin	Vin	0	AC	1
+*
+*	V-	V+	Vout
+Z2b	2	Vin	Vout
+C18	1	0	1u
+R24	1	2	1.2k
+R22	2	Vout	22k
+C16	2	Vout	4.7n
+R23	2	3	5.1k
+C17	3	Vout	82n

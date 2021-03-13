@@ -1,0 +1,37 @@
+*
+Vin	Vin	0	AC	1
+Vdd Vdd	0	DC -4.5
+Vcc	Vcc	0	DC 4.5
+*
+*	V-	V+	Vout
+Z1b	12	5	Vout
+
+C6	Vin	1	2.2u
+R9	1	2	12k
+D4	2	0	N914
+D5	0	2	N914
+R10	2	3	39k
+C8	3	4	82n
+C9	4	0	1n
+R12	4	0	12k
+R11	3	5	10k
+R18	5	0	43k
+C10	5	6	22n
+R13	5	6	5.1k
+PSPECTRUM	6	7	11	25k
+R17	11	12	1.2k
+R20	12	Vout	20k
+C14	12	Vout	580p
+R19	12	0	10k
+C11	7	0	27n
+C12	7	8	100n
+
+* Gyrator
+R15	9	0	150k
+R14	10	8	2.2k
+C13	8	9	8.2nu
+R16	9	Vdd	3.3k
+Q2	Vcc	9	10	N3904
+
+.model N3904 npn(vt=26e-3 is=1e-12 ne=1 br=1 bf=100)
+.model N914 d (Is=2.52n Rs=.568 N=1.752 Cjo=4p M=.4 tt=20n Iave=200m Vpk=75)

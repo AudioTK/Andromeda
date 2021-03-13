@@ -1,0 +1,5 @@
+*
+Vin	Vin	0	AC	1
+*
+R21	Vin	Vout	4.7k
+C15	Vout	0	8.2n

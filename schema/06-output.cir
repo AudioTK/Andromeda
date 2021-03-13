@@ -1,0 +1,7 @@
+*
+Vin	Vin	0	AC	1
+*
+C19	Vin	1	2.2u
+PLEVEL	1	2	0	50k
+C20	2	Vout	470n
+R25	Vout	0	150k
