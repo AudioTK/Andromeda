@@ -30,14 +30,15 @@ class StaticFilter final: public ATK::ModellerFilter<double>
 
   Eigen::Matrix<DataType, 1, 1> static_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 1, 1> input_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
-  mutable Eigen::Matrix<DataType, 1, 1> dynamic_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
-  Eigen::Matrix<DataType, 1, 1> inverse;
-  ATK::StaticResistorCapacitor<DataType> r4c1{2700, 6.8e-08};
-  ATK::StaticResistor<DataType> r5{10000};
-  ATK::StaticCapacitor<DataType> c2{2.2e-08};
+  mutable Eigen::Matrix<DataType, 2, 1> dynamic_state{Eigen::Matrix<DataType, 2, 1>::Zero()};
+  Eigen::Matrix<DataType, 2, 2> inverse;
+  ATK::StaticResistorCapacitor<DataType> r24c18{1200, 1e-06};
+  ATK::StaticResistorCapacitor<DataType> r23c17{5100, 8.2e-08};
+  ATK::StaticCapacitor<DataType> c16{4.7e-09};
+  ATK::StaticResistor<DataType> r22{22000};
 
 public:
-  StaticFilter(): ModellerFilter<DataType>(1, 1), inverse(1, 1)
+  StaticFilter(): ModellerFilter<DataType>(2, 1), inverse(2, 2)
   {
     static_state << 0.000000;
   }
@@ -46,7 +47,7 @@ public:
 
   gsl::index get_nb_dynamic_pins() const override
   {
-    return 1;
+    return 2;
   }
 
   gsl::index get_nb_input_pins() const override
@@ -66,15 +67,17 @@ public:
 
   gsl::index get_nb_components() const override
   {
-    return 3;
+    return 5;
   }
 
   std::string get_dynamic_pin_name(gsl::index identifier) const override
   {
     switch(identifier)
     {
-    case 0:
+    case 1:
       return "vout";
+    case 0:
+      return "2";
     default:
       throw ATK::RuntimeError("No such pin");
     }
@@ -157,24 +160,30 @@ public:
   template <bool steady_state>
   void setup_inverse()
   {
-    Eigen::Matrix<DataType, 1, 1> jacobian(Eigen::Matrix<DataType, 1, 1>::Zero());
-    auto jac0_0
-        = 0 - (steady_state ? 0 : r4c1.get_gradient()) - r5.get_gradient() - (steady_state ? 0 : c2.get_gradient());
-    jacobian << jac0_0;
+    Eigen::Matrix<DataType, 2, 2> jacobian(Eigen::Matrix<DataType, 2, 2>::Zero());
+    auto jac0_0 = 0 - (steady_state ? 0 : r24c18.get_gradient()) - (steady_state ? 0 : r23c17.get_gradient())
+                - (steady_state ? 0 : c16.get_gradient()) - r22.get_gradient();
+    auto jac0_1
+        = 0 + (steady_state ? 0 : r23c17.get_gradient()) + (steady_state ? 0 : c16.get_gradient()) + r22.get_gradient();
+    auto jac1_0 = 0 + -1;
+    auto jac1_1 = 0;
+    jacobian << jac0_0, jac0_1, jac1_0, jac1_1;
     inverse = jacobian.inverse();
   }
 
   void init()
   {
     // update_steady_state
-    r4c1.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    c2.update_steady_state(1. / input_sampling_rate, static_state[0], dynamic_state[0]);
+    r24c18.update_steady_state(1. / input_sampling_rate, dynamic_state[0], static_state[0]);
+    r23c17.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
+    c16.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
 
     solve<true>();
 
     // update_steady_state
-    r4c1.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    c2.update_steady_state(1. / input_sampling_rate, static_state[0], dynamic_state[0]);
+    r24c18.update_steady_state(1. / input_sampling_rate, dynamic_state[0], static_state[0]);
+    r23c17.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
+    c16.update_steady_state(1. / input_sampling_rate, dynamic_state[0], dynamic_state[1]);
 
     initialized = true;
   }
@@ -191,8 +200,9 @@ public:
       solve<false>();
 
       // Update state
-      r4c1.update_state(input_state[0], dynamic_state[0]);
-      c2.update_state(static_state[0], dynamic_state[0]);
+      r24c18.update_state(dynamic_state[0], static_state[0]);
+      r23c17.update_state(dynamic_state[0], dynamic_state[1]);
+      c16.update_state(dynamic_state[0], dynamic_state[1]);
       for(gsl::index j = 0; j < nb_output_ports; ++j)
       {
         outputs[j][i] = dynamic_state[j];
@@ -225,13 +235,15 @@ public:
 
     // Dynamic states
     auto d0_ = dynamic_state[0];
+    auto d1_ = dynamic_state[1];
 
     // Precomputes
 
-    Eigen::Matrix<DataType, 1, 1> eqs(Eigen::Matrix<DataType, 1, 1>::Zero());
-    auto eq0 = -(steady_state ? 0 : r4c1.get_current(i0_, d0_)) - r5.get_current(s0_, d0_)
-             - (steady_state ? 0 : c2.get_current(s0_, d0_));
-    eqs << eq0;
+    Eigen::Matrix<DataType, 2, 1> eqs(Eigen::Matrix<DataType, 2, 1>::Zero());
+    auto eq0 = +(steady_state ? 0 : r24c18.get_current(d0_, s0_)) + (steady_state ? 0 : r23c17.get_current(d0_, d1_))
+             + (steady_state ? 0 : c16.get_current(d0_, d1_)) + r22.get_current(d0_, d1_);
+    auto eq1 = input_state[0] - dynamic_state[0];
+    eqs << eq0, eq1;
 
     // Check if the equations have converged
     if((eqs.array().abs() < EPS).all())
@@ -239,7 +251,7 @@ public:
       return true;
     }
 
-    Eigen::Matrix<DataType, 1, 1> delta = inverse * eqs;
+    Eigen::Matrix<DataType, 2, 1> delta = inverse * eqs;
 
     // Check if the update is big enough
     if(delta.hasNaN() || (delta.array().abs() < EPS).all())
@@ -253,11 +265,10 @@ public:
   }
 };
 } // namespace
-
-extern "C"
+namespace Andromeda
 {
-  std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
-  {
-    return std::make_unique<StaticFilter>();
-  }
-} // namespace
+std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter_stage5()
+{
+  return std::make_unique<StaticFilter>();
+}
+} // namespace Andromeda

@@ -16,12 +16,12 @@
 
 namespace
 {
-  constexpr gsl::index MAX_ITERATION{1};
-  constexpr gsl::index MAX_ITERATION_STEADY_STATE{1};
+constexpr gsl::index MAX_ITERATION{1};
+constexpr gsl::index MAX_ITERATION_STEADY_STATE{1};
 
-  constexpr gsl::index INIT_WARMUP = 1;
-  constexpr double EPS{1e-8};
-  constexpr double MAX_DELTA{1e-1};
+constexpr gsl::index INIT_WARMUP = 1;
+constexpr double EPS{1e-8};
+constexpr double MAX_DELTA{1e-1};
 
 class StaticFilter final: public ATK::ModellerFilter<double>
 {
@@ -38,8 +38,7 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   DataType plevel_trimmer{0};
 
 public:
-  StaticFilter()
-  : ModellerFilter<DataType>(3, 1)
+  StaticFilter(): ModellerFilter<DataType>(3, 1)
   {
     static_state << 0.000000;
   }
@@ -165,7 +164,7 @@ public:
 
       for(gsl::index i = 0; i < INIT_WARMUP; ++i)
       {
-        static_state = target_static_state * ((i+1.) / INIT_WARMUP);
+        static_state = target_static_state * ((i + 1.) / INIT_WARMUP);
         init();
       }
       static_state = target_static_state;
@@ -173,8 +172,7 @@ public:
     setup_inverse<false>();
   }
 
-
-  template<bool steady_state>
+  template <bool steady_state>
   void setup_inverse()
   {
   }
@@ -216,7 +214,7 @@ public:
   }
 
   /// Solve for steady state and non steady state the system
-  template<bool steady_state>
+  template <bool steady_state>
   void solve() const
   {
     gsl::index iteration = 0;
@@ -229,28 +227,30 @@ public:
     }
   }
 
-template<bool steady_state>
-bool iterate() const
-{
+  template <bool steady_state>
+  bool iterate() const
+  {
     // Static states
-    auto s0_= static_state[0];
+    auto s0_ = static_state[0];
 
     // Input states
-   auto  i0_= input_state[0];
+    auto i0_ = input_state[0];
 
     // Dynamic states
-    auto d0_= dynamic_state[0];
-    auto d1_= dynamic_state[1];
-    auto d2_= dynamic_state[2];
+    auto d0_ = dynamic_state[0];
+    auto d1_ = dynamic_state[1];
+    auto d2_ = dynamic_state[2];
 
     // Precomputes
 
     Eigen::Matrix<DataType, 3, 1> eqs(Eigen::Matrix<DataType, 3, 1>::Zero());
-    auto eq0 = + (steady_state ? 0 : c20.get_current(d0_, d1_)) + (plevel_trimmer != 0 ? (d2_ - d0_) / (plevel_trimmer * plevel) : 0) + (plevel_trimmer != 1 ? (s0_ - d0_) / ((1 - plevel_trimmer) * plevel) : 0);
-    auto eq1 = - (steady_state ? 0 : c20.get_current(d0_, d1_)) + r25.get_current(d1_, s0_);
-    auto eq2 = - (steady_state ? 0 : c19.get_current(i0_, d2_)) + (plevel_trimmer != 0 ? (d0_ - d2_) / (plevel_trimmer * plevel) : 0);
+    auto eq0 = +(steady_state ? 0 : c20.get_current(d0_, d1_))
+             + (plevel_trimmer != 0 ? (d2_ - d0_) / (plevel_trimmer * plevel) : 0)
+             + (plevel_trimmer != 1 ? (s0_ - d0_) / ((1 - plevel_trimmer) * plevel) : 0);
+    auto eq1 = -(steady_state ? 0 : c20.get_current(d0_, d1_)) + r25.get_current(d1_, s0_);
+    auto eq2 = -(steady_state ? 0 : c19.get_current(i0_, d2_))
+             + (plevel_trimmer != 0 ? (d0_ - d2_) / (plevel_trimmer * plevel) : 0);
     eqs << eq0, eq1, eq2;
-
 
     // Check if the equations have converged
     if((eqs.array().abs() < EPS).all())
@@ -258,7 +258,9 @@ bool iterate() const
       return true;
     }
 
-    auto jac0_0 = 0 - (steady_state ? 0 : c20.get_gradient()) + (plevel_trimmer != 0 ? -1 / (plevel_trimmer * plevel) : 0) + (plevel_trimmer != 1 ? -1 / ((1 - plevel_trimmer) * plevel) : 0);
+    auto jac0_0 = 0 - (steady_state ? 0 : c20.get_gradient())
+                + (plevel_trimmer != 0 ? -1 / (plevel_trimmer * plevel) : 0)
+                + (plevel_trimmer != 1 ? -1 / ((1 - plevel_trimmer) * plevel) : 0);
     auto jac0_1 = 0 + (steady_state ? 0 : c20.get_gradient());
     auto jac0_2 = 0 + (plevel_trimmer != 0 ? 1 / (plevel_trimmer * plevel) : 0);
     auto jac1_0 = 0 + (steady_state ? 0 : c20.get_gradient());
@@ -266,8 +268,10 @@ bool iterate() const
     auto jac1_2 = 0;
     auto jac2_0 = 0 + (plevel_trimmer != 0 ? 1 / (plevel_trimmer * plevel) : 0);
     auto jac2_1 = 0;
-    auto jac2_2 = 0 - (steady_state ? 0 : c19.get_gradient()) + (plevel_trimmer != 0 ? -1 / (plevel_trimmer * plevel) : 0);
-    auto det = (1 * jac0_0 * (1 * jac1_1 * jac2_2) + -1 * jac0_1 * (1 * jac1_0 * jac2_2) + 1 * jac0_2 * (-1 * jac1_1 * jac2_0));
+    auto jac2_2
+        = 0 - (steady_state ? 0 : c19.get_gradient()) + (plevel_trimmer != 0 ? -1 / (plevel_trimmer * plevel) : 0);
+    auto det = (1 * jac0_0 * (1 * jac1_1 * jac2_2) + -1 * jac0_1 * (1 * jac1_0 * jac2_2)
+                + 1 * jac0_2 * (-1 * jac1_1 * jac2_0));
     auto invdet = 1 / det;
     auto com0_0 = (1 * jac1_1 * jac2_2);
     auto com1_0 = -1 * (1 * jac1_0 * jac2_2);
@@ -280,9 +284,7 @@ bool iterate() const
     auto com2_2 = (1 * jac0_0 * jac1_1 + -1 * jac0_1 * jac1_0);
     Eigen::Matrix<DataType, 3, 3> cojacobian(Eigen::Matrix<DataType, 3, 3>::Zero());
 
-    cojacobian << com0_0, com0_1, com0_2
-      , com1_0, com1_1, com1_2
-      , com2_0, com2_1, com2_2;
+    cojacobian << com0_0, com0_1, com0_2, com1_0, com1_1, com1_2, com2_0, com2_1, com2_2;
     Eigen::Matrix<DataType, 3, 1> delta = cojacobian * eqs * invdet;
 
     // Check if the update is big enough
@@ -295,15 +297,13 @@ bool iterate() const
 
     return false;
   }
-
 };
-}
+} // namespace
 
 extern "C"
 {
-std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
-{
+  std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
+  {
     return std::make_unique<StaticFilter>();
-}
+  }
 } // namespace
-

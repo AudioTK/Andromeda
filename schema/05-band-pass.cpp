@@ -16,12 +16,12 @@
 
 namespace
 {
-  constexpr gsl::index MAX_ITERATION{1};
-  constexpr gsl::index MAX_ITERATION_STEADY_STATE{1};
+constexpr gsl::index MAX_ITERATION{1};
+constexpr gsl::index MAX_ITERATION_STEADY_STATE{1};
 
-  constexpr gsl::index INIT_WARMUP = 1;
-  constexpr double EPS{1e-8};
-  constexpr double MAX_DELTA{1e-1};
+constexpr gsl::index INIT_WARMUP = 1;
+constexpr double EPS{1e-8};
+constexpr double MAX_DELTA{1e-1};
 
 class StaticFilter final: public ATK::ModellerFilter<double>
 {
@@ -38,9 +38,7 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   ATK::StaticResistor<DataType> r22{22000};
 
 public:
-  StaticFilter()
-  : ModellerFilter<DataType>(2, 1)
-  , inverse(2, 2)
+  StaticFilter(): ModellerFilter<DataType>(2, 1), inverse(2, 2)
   {
     static_state << 0.000000;
   }
@@ -151,7 +149,7 @@ public:
 
       for(gsl::index i = 0; i < INIT_WARMUP; ++i)
       {
-        static_state = target_static_state * ((i+1.) / INIT_WARMUP);
+        static_state = target_static_state * ((i + 1.) / INIT_WARMUP);
         init();
       }
       static_state = target_static_state;
@@ -159,17 +157,17 @@ public:
     setup_inverse<false>();
   }
 
-
-  template<bool steady_state>
+  template <bool steady_state>
   void setup_inverse()
   {
     Eigen::Matrix<DataType, 2, 2> jacobian(Eigen::Matrix<DataType, 2, 2>::Zero());
-    auto jac0_0 = 0 - (steady_state ? 0 : r24c18.get_gradient()) - (steady_state ? 0 : r23c17.get_gradient()) - (steady_state ? 0 : c16.get_gradient()) - r22.get_gradient();
-    auto jac0_1 = 0 + (steady_state ? 0 : r23c17.get_gradient()) + (steady_state ? 0 : c16.get_gradient()) + r22.get_gradient();
+    auto jac0_0 = 0 - (steady_state ? 0 : r24c18.get_gradient()) - (steady_state ? 0 : r23c17.get_gradient())
+                - (steady_state ? 0 : c16.get_gradient()) - r22.get_gradient();
+    auto jac0_1
+        = 0 + (steady_state ? 0 : r23c17.get_gradient()) + (steady_state ? 0 : c16.get_gradient()) + r22.get_gradient();
     auto jac1_0 = 0 + -1;
     auto jac1_1 = 0;
-    jacobian << jac0_0, jac0_1
-      , jac1_0, jac1_1;
+    jacobian << jac0_0, jac0_1, jac1_0, jac1_1;
     inverse = jacobian.inverse();
   }
 
@@ -213,7 +211,7 @@ public:
   }
 
   /// Solve for steady state and non steady state the system
-  template<bool steady_state>
+  template <bool steady_state>
   void solve() const
   {
     gsl::index iteration = 0;
@@ -226,26 +224,26 @@ public:
     }
   }
 
-template<bool steady_state>
-bool iterate() const
-{
+  template <bool steady_state>
+  bool iterate() const
+  {
     // Static states
-    auto s0_= static_state[0];
+    auto s0_ = static_state[0];
 
     // Input states
-   auto  i0_= input_state[0];
+    auto i0_ = input_state[0];
 
     // Dynamic states
-    auto d0_= dynamic_state[0];
-    auto d1_= dynamic_state[1];
+    auto d0_ = dynamic_state[0];
+    auto d1_ = dynamic_state[1];
 
     // Precomputes
 
     Eigen::Matrix<DataType, 2, 1> eqs(Eigen::Matrix<DataType, 2, 1>::Zero());
-    auto eq0 = + (steady_state ? 0 : r24c18.get_current(d0_, s0_)) + (steady_state ? 0 : r23c17.get_current(d0_, d1_)) + (steady_state ? 0 : c16.get_current(d0_, d1_)) + r22.get_current(d0_, d1_);
+    auto eq0 = +(steady_state ? 0 : r24c18.get_current(d0_, s0_)) + (steady_state ? 0 : r23c17.get_current(d0_, d1_))
+             + (steady_state ? 0 : c16.get_current(d0_, d1_)) + r22.get_current(d0_, d1_);
     auto eq1 = input_state[0] - dynamic_state[0];
     eqs << eq0, eq1;
-
 
     // Check if the equations have converged
     if((eqs.array().abs() < EPS).all())
@@ -265,15 +263,13 @@ bool iterate() const
 
     return false;
   }
-
 };
-}
+} // namespace
 
 extern "C"
 {
-std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
-{
+  std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
+  {
     return std::make_unique<StaticFilter>();
-}
+  }
 } // namespace
-

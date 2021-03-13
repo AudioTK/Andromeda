@@ -32,9 +32,8 @@ class StaticFilter final: public ATK::ModellerFilter<double>
   mutable Eigen::Matrix<DataType, 1, 1> input_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   mutable Eigen::Matrix<DataType, 1, 1> dynamic_state{Eigen::Matrix<DataType, 1, 1>::Zero()};
   Eigen::Matrix<DataType, 1, 1> inverse;
-  ATK::StaticResistorCapacitor<DataType> r4c1{2700, 6.8e-08};
-  ATK::StaticResistor<DataType> r5{10000};
-  ATK::StaticCapacitor<DataType> c2{2.2e-08};
+  ATK::StaticCapacitor<DataType> c15{8.2e-09};
+  ATK::StaticResistor<DataType> r21{4700};
 
 public:
   StaticFilter(): ModellerFilter<DataType>(1, 1), inverse(1, 1)
@@ -66,7 +65,7 @@ public:
 
   gsl::index get_nb_components() const override
   {
-    return 3;
+    return 2;
   }
 
   std::string get_dynamic_pin_name(gsl::index identifier) const override
@@ -158,8 +157,7 @@ public:
   void setup_inverse()
   {
     Eigen::Matrix<DataType, 1, 1> jacobian(Eigen::Matrix<DataType, 1, 1>::Zero());
-    auto jac0_0
-        = 0 - (steady_state ? 0 : r4c1.get_gradient()) - r5.get_gradient() - (steady_state ? 0 : c2.get_gradient());
+    auto jac0_0 = 0 - (steady_state ? 0 : c15.get_gradient()) - r21.get_gradient();
     jacobian << jac0_0;
     inverse = jacobian.inverse();
   }
@@ -167,14 +165,12 @@ public:
   void init()
   {
     // update_steady_state
-    r4c1.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    c2.update_steady_state(1. / input_sampling_rate, static_state[0], dynamic_state[0]);
+    c15.update_steady_state(1. / input_sampling_rate, dynamic_state[0], static_state[0]);
 
     solve<true>();
 
     // update_steady_state
-    r4c1.update_steady_state(1. / input_sampling_rate, input_state[0], dynamic_state[0]);
-    c2.update_steady_state(1. / input_sampling_rate, static_state[0], dynamic_state[0]);
+    c15.update_steady_state(1. / input_sampling_rate, dynamic_state[0], static_state[0]);
 
     initialized = true;
   }
@@ -191,8 +187,7 @@ public:
       solve<false>();
 
       // Update state
-      r4c1.update_state(input_state[0], dynamic_state[0]);
-      c2.update_state(static_state[0], dynamic_state[0]);
+      c15.update_state(dynamic_state[0], static_state[0]);
       for(gsl::index j = 0; j < nb_output_ports; ++j)
       {
         outputs[j][i] = dynamic_state[j];
@@ -229,8 +224,7 @@ public:
     // Precomputes
 
     Eigen::Matrix<DataType, 1, 1> eqs(Eigen::Matrix<DataType, 1, 1>::Zero());
-    auto eq0 = -(steady_state ? 0 : r4c1.get_current(i0_, d0_)) - r5.get_current(s0_, d0_)
-             - (steady_state ? 0 : c2.get_current(s0_, d0_));
+    auto eq0 = +(steady_state ? 0 : c15.get_current(d0_, s0_)) - r21.get_current(i0_, d0_);
     eqs << eq0;
 
     // Check if the equations have converged
@@ -253,11 +247,10 @@ public:
   }
 };
 } // namespace
-
-extern "C"
+namespace Andromeda
 {
-  std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
-  {
-    return std::make_unique<StaticFilter>();
-  }
-} // namespace
+std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter_stage4()
+{
+  return std::make_unique<StaticFilter>();
+}
+} // namespace Andromeda

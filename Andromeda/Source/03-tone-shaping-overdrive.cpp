@@ -507,11 +507,10 @@ public:
   }
 };
 } // namespace
-
-extern "C"
+namespace Andromeda
 {
-  std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter()
-  {
-    return std::make_unique<StaticFilter>();
-  }
-} // namespace
+std::unique_ptr<ATK::ModellerFilter<double>> createStaticFilter_stage3()
+{
+  return std::make_unique<StaticFilter>();
+}
+} // namespace Andromeda
