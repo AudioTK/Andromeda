@@ -1,0 +1,23 @@
+= Andromeda 1.0
+Matthieu Brucher <matthieu.brucher@gmail.com>
+:doctype: book
+:source-highlighter: coderay
+:listing-caption: Listing
+// Uncomment next line to set page size (default is Letter)
+//:pdf-page-size: A4
+
+* Andromeda* is a free Open Source plugin modeling the Andromeda variant of the Noble ODR-1.
+
+image::Andromeda.png[GUI]
+
+== Usage
+
+Here is how the parameters interact with the plugin:
+
+[square]
+* *DistLevel* changes the amount of distortion you get from the plugin by increasing the input level,
+* *Tone* handles impacted spectrum of the tone section
+
+== Bugs
+
+There shouldn’t be bugs, but you never know. Please contact me or leave a message on http://www.audio-tk.com[Audio ToolKit web site] or on http://blog.audio-tk.com/tags/atkts9/[my blog, on the announcement page].
