@@ -39,10 +39,7 @@ private:
   juce::Image bckgndImage;
 
   ATK::juce::SliderComponent distLevel;
-  ATK::juce::SliderComponent lowLevel;
-  ATK::juce::SliderComponent highLevel;
-  ATK::juce::SliderComponent midLevel;
-  ATK::juce::SliderComponent midFreq;
+  ATK::juce::SliderComponent tone;
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AndromedaAudioProcessorEditor)
 };

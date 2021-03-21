@@ -4,7 +4,7 @@
               splashScreenColour="Dark" projectType="audioplug" version="1.0"
               bundleIdentifier="com.MatthieuBrucher.Andromeda" includeBinaryInAppConfig="1"
               buildVST="0" buildVST3="1" buildAU="1" buildAUv3="1" buildRTAS="0"
-              buildAAX="0" buildStandalone="1" enableIAA="0" pluginName="Andromeda"
+              buildAAX="0" buildStandalone="0" enableIAA="0" pluginName="Andromeda"
               pluginDesc="" pluginManufacturer="MatthieuBrucher" pluginManufacturerCode="MatB"
               pluginCode="Andr" pluginChannelConfigs="{1,1}" pluginIsSynth="0"
               pluginWantsMidiIn="0" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
@@ -12,7 +12,7 @@
               pluginRTASCategory="" aaxIdentifier="com.MatthieuBrucher.Andromeda"
               pluginAAXCategory="0" companyName="Matthieu Brucher" companyWebsite="http://www.audio-tk.com/"
               cppLanguageStandard="17" companyCopyright="Matthieu Brucher"
-              pluginFormats="buildAU,buildAUv3,buildStandalone,buildVST3" jucerFormatVersion="1"
+              pluginFormats="buildAU,buildAUv3,buildVST3" jucerFormatVersion="1"
               defines="JUCE_VST3_CAN_REPLACE_VST2=0&#10;ATK_NO_FFT" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0">
   <MAINGROUP id="H9V4ut" name="Andromeda">

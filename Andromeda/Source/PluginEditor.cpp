@@ -19,23 +19,17 @@ AndromedaAudioProcessorEditor::AndromedaAudioProcessorEditor(AndromedaAudioProce
   , paramState(paramState)
   , knob(juce::ImageFileFormat::loadFrom(BinaryData::KNB_Pitt_L_png, BinaryData::KNB_Pitt_L_pngSize), 55, 55, 101)
   , distLevel(paramState, "distLevel", "Distortion", &knob)
-  , lowLevel(paramState, "lowLevel", "Low Level", &knob)
-  , highLevel(paramState, "highLevel", "High Level", &knob)
-  , midLevel(paramState, "midLevel", "Mid Level", &knob)
-  , midFreq(paramState, "midFreq", "Mid Freq", &knob)
+  , tone(paramState, "tone", "Tone", &knob)
 
 {
   addAndMakeVisible(distLevel);
-  addAndMakeVisible(lowLevel);
-  addAndMakeVisible(highLevel);
-  addAndMakeVisible(midLevel);
-  addAndMakeVisible(midFreq);
+  addAndMakeVisible(tone);
 
   bckgndImage = juce::ImageFileFormat::loadFrom(BinaryData::background_jpg, BinaryData::background_jpgSize);
 
   // Make sure that before the constructor has finished, you've set the
   // editor's size to whatever you need it to be.
-  setSize(300, 200);
+  setSize(200, 133);
 }
 
 AndromedaAudioProcessorEditor::~AndromedaAudioProcessorEditor() = default;
@@ -48,20 +42,13 @@ void AndromedaAudioProcessorEditor::paint(juce::Graphics& g)
   g.drawText("Andromeda", 20, 10, 200, 30, juce::Justification::verticallyCentred);
   g.setFont(juce::Font("Times New Roman", 12.0f, juce::Font::bold));
   g.drawText(
-      "Dist", 20, 130, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
-  g.drawText("Low", 120, 90, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
+      "Dist", 20, 100, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
   g.drawText(
-      "High", 120, 170, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
-  g.drawText("Mid", 220, 90, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
-  g.drawText(
-      "Freq", 220, 170, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
+      "Tone", 120, 100, 50, 30, juce::Justification::horizontallyCentred | juce::Justification::verticallyCentred);
 }
 
 void AndromedaAudioProcessorEditor::resized()
 {
-  distLevel.setBounds(20, 80, 55, 55);
-  lowLevel.setBounds(120, 40, 55, 55);
-  highLevel.setBounds(120, 120, 55, 55);
-  midLevel.setBounds(220, 40, 55, 55);
-  midFreq.setBounds(220, 120, 55, 55);
+  distLevel.setBounds(20, 50, 55, 55);
+  tone.setBounds(120, 50, 55, 55);
 }

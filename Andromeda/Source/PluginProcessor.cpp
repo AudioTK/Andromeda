@@ -38,13 +38,7 @@ AndromedaAudioProcessor::AndromedaAudioProcessor()
         nullptr,
         juce::Identifier("ATKAndromeda"),
         {std::make_unique<juce::AudioParameterFloat>("distLevel", "Distortion Level", 0.f, 100.f, 50.f),
-            std::make_unique<juce::AudioParameterFloat>("lowLevel", "Low Freq Level", -20.0f, 20.0f, .0f),
-            std::make_unique<juce::AudioParameterFloat>("highLevel", "High Freq Level", -20.0f, 20.0f, .0f),
-            std::make_unique<juce::AudioParameterFloat>("midLevel", "Mid Freq Level", -15.f, 15.0f, .0f),
-            std::make_unique<juce::AudioParameterFloat>("midFreq", "Mid Freq", 100.f, 1500.f, 500.f),
-            std::make_unique<juce::AudioParameterFloat>("lowQ", "Low Q", 1.f, 4.f, 3.1f),
-            std::make_unique<juce::AudioParameterFloat>("highQ", "High Q", .1f, .5f, 0.25f),
-            std::make_unique<juce::AudioParameterFloat>("midQ", "MidQ", 0.5f, 4.f, 1.f)})
+            std::make_unique<juce::AudioParameterFloat>("tone", "Tone", 0.f, 100.f, 50.f)})
 {
   bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"), &inFilter, 0);
   oversamplingFilter.set_input_port(0, bandPassFilter.get(), bandPassFilter->find_dynamic_pin("vout"));
