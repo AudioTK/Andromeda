@@ -17,7 +17,7 @@
 #  define JucePlugin_Build_VST3 1
 #endif
 #ifndef JucePlugin_Build_AU
-#  define JucePlugin_Build_AU 0
+#  define JucePlugin_Build_AU 1
 #endif
 #ifndef JucePlugin_Build_AUv3
 #  define JucePlugin_Build_AUv3 1
@@ -41,13 +41,13 @@
 #  define JucePlugin_Name "Andromeda"
 #endif
 #ifndef JucePlugin_Desc
-#  define JucePlugin_Desc "Andromeda"
+#  define JucePlugin_Desc ""
 #endif
 #ifndef JucePlugin_Manufacturer
-#  define JucePlugin_Manufacturer "Matthieu Brucher"
+#  define JucePlugin_Manufacturer "MatthieuBrucher"
 #endif
 #ifndef JucePlugin_ManufacturerWebsite
-#  define JucePlugin_ManufacturerWebsite "https://www.audio-tk.com"
+#  define JucePlugin_ManufacturerWebsite "http://www.audio-tk.com/"
 #endif
 #ifndef JucePlugin_ManufacturerEmail
 #  define JucePlugin_ManufacturerEmail ""
@@ -56,7 +56,7 @@
 #  define JucePlugin_ManufacturerCode 0x4d617442
 #endif
 #ifndef JucePlugin_PluginCode
-#  define JucePlugin_PluginCode 0x4e647968
+#  define JucePlugin_PluginCode 0x416e6472
 #endif
 #ifndef JucePlugin_IsSynth
 #  define JucePlugin_IsSynth 0
@@ -98,10 +98,10 @@
 #  define JucePlugin_AUSubType JucePlugin_PluginCode
 #endif
 #ifndef JucePlugin_AUExportPrefix
-#  define JucePlugin_AUExportPrefix ATKAndromeda
+#  define JucePlugin_AUExportPrefix Andromeda
 #endif
 #ifndef JucePlugin_AUExportPrefixQuoted
-#  define JucePlugin_AUExportPrefixQuoted "ATKAndromeda"
+#  define JucePlugin_AUExportPrefixQuoted "Andromeda"
 #endif
 #ifndef JucePlugin_AUManufacturerCode
 #  define JucePlugin_AUManufacturerCode JucePlugin_ManufacturerCode
@@ -149,11 +149,23 @@
 #  define JucePlugin_IAASubType JucePlugin_PluginCode
 #endif
 #ifndef JucePlugin_IAAName
-#  define JucePlugin_IAAName "Matthieu Brucher: Andromeda"
+#  define JucePlugin_IAAName "MatthieuBrucher: Andromeda"
 #endif
 #ifndef JucePlugin_VSTNumMidiInputs
 #  define JucePlugin_VSTNumMidiInputs 16
 #endif
 #ifndef JucePlugin_VSTNumMidiOutputs
 #  define JucePlugin_VSTNumMidiOutputs 16
+#endif
+#ifndef JucePlugin_MaxNumInputChannels
+#  define JucePlugin_MaxNumInputChannels 1
+#endif
+#ifndef JucePlugin_MaxNumOutputChannels
+#  define JucePlugin_MaxNumOutputChannels 1
+#endif
+#ifndef JucePlugin_PreferredChannelConfigurations
+#  define JucePlugin_PreferredChannelConfigurations \
+    {                                               \
+      1, 1                                          \
+    }
 #endif

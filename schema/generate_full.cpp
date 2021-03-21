@@ -35,7 +35,7 @@ int main(int argc, const char** argv)
   std::unique_ptr<ATK::ModellerFilter<double>> toneShapingOverdriveFilter = Andromeda::createStaticFilter_stage3();
   ATK::IIRFilter<ATK::ButterworthLowPassCoefficients<double>> lowpassFilter;
   ATK::DecimationFilter<double> decimationFilter;
-  std::unique_ptr<ATK::ModellerFilter<double>> highPassFilter = Andromeda::createStaticFilter_stage4();
+  std::unique_ptr<ATK::ModellerFilter<double>> lowPass2Filter = Andromeda::createStaticFilter_stage4();
   std::unique_ptr<ATK::ModellerFilter<double>> bandPass2Filter = Andromeda::createStaticFilter_stage5();
   ATK::OutPointerFilter<double> outFilter(output.data(), 1, PROCESSSIZE, false);
 
@@ -48,9 +48,9 @@ int main(int argc, const char** argv)
   lowpassFilter.set_input_port(
       0, toneShapingOverdriveFilter.get(), toneShapingOverdriveFilter->find_dynamic_pin("vout"));
   decimationFilter.set_input_port(0, &lowpassFilter, 0);
-  highPassFilter->set_input_port(highPassFilter->find_input_pin("vin"), decimationFilter, 0);
+  lowPass2Filter->set_input_port(lowPass2Filter->find_input_pin("vin"), decimationFilter, 0);
   bandPass2Filter->set_input_port(
-      bandPass2Filter->find_input_pin("vin"), highPassFilter.get(), highPassFilter->find_dynamic_pin("vout"));
+      bandPass2Filter->find_input_pin("vin"), lowPass2Filter.get(), lowPass2Filter->find_dynamic_pin("vout"));
   outFilter.set_input_port(0, bandPass2Filter.get(), bandPass2Filter->find_dynamic_pin("vout"));
 
   lowpassFilter.set_cut_frequency(20000);
@@ -70,8 +70,8 @@ int main(int argc, const char** argv)
   lowpassFilter.set_output_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   decimationFilter.set_input_sampling_rate(SAMPLING_RATE * OVERSAMPLING);
   decimationFilter.set_output_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_input_sampling_rate(SAMPLING_RATE);
-  highPassFilter->set_output_sampling_rate(SAMPLING_RATE);
+  lowPass2Filter->set_input_sampling_rate(SAMPLING_RATE);
+  lowPass2Filter->set_output_sampling_rate(SAMPLING_RATE);
   bandPass2Filter->set_input_sampling_rate(SAMPLING_RATE);
   bandPass2Filter->set_output_sampling_rate(SAMPLING_RATE);
   outFilter.set_input_sampling_rate(SAMPLING_RATE);

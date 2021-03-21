@@ -8,184 +8,284 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "static_elements.h"
 
 //==============================================================================
-NewProjectAudioProcessor::NewProjectAudioProcessor()
+AndromedaAudioProcessor::AndromedaAudioProcessor()
+  :
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+  juce::AudioProcessor(BusesProperties()
+#  if !JucePlugin_IsMidiEffect
+#    if !JucePlugin_IsSynth
+                           .withInput("Input", juce::AudioChannelSet::mono(), true)
+#    endif
+                           .withOutput("Output", juce::AudioChannelSet::mono(), true)
+#  endif
+          )
+  ,
 #endif
+  inFilter(nullptr, 1, 0, false)
+  , bandPassFilter(Andromeda::createStaticFilter_stage1())
+  , oversamplingFilter(1)
+  , distortionFilter(Andromeda::createStaticFilter_stage2())
+  , toneShapingOverdriveFilter(Andromeda::createStaticFilter_stage3())
+  , lowpassFilter(1)
+  , decimationFilter(1)
+  , lowPass2Filter(Andromeda::createStaticFilter_stage4())
+  , bandPass2Filter(Andromeda::createStaticFilter_stage5())
+  , outFilter(nullptr, 1, 0, false)
+  , parameters(*this,
+        nullptr,
+        juce::Identifier("ATKAndromeda"),
+        {std::make_unique<juce::AudioParameterFloat>("distLevel", "Distortion Level", 0.f, 100.f, 50.f),
+            std::make_unique<juce::AudioParameterFloat>("lowLevel", "Low Freq Level", -20.0f, 20.0f, .0f),
+            std::make_unique<juce::AudioParameterFloat>("highLevel", "High Freq Level", -20.0f, 20.0f, .0f),
+            std::make_unique<juce::AudioParameterFloat>("midLevel", "Mid Freq Level", -15.f, 15.0f, .0f),
+            std::make_unique<juce::AudioParameterFloat>("midFreq", "Mid Freq", 100.f, 1500.f, 500.f),
+            std::make_unique<juce::AudioParameterFloat>("lowQ", "Low Q", 1.f, 4.f, 3.1f),
+            std::make_unique<juce::AudioParameterFloat>("highQ", "High Q", .1f, .5f, 0.25f),
+            std::make_unique<juce::AudioParameterFloat>("midQ", "MidQ", 0.5f, 4.f, 1.f)})
 {
+  bandPassFilter->set_input_port(bandPassFilter->find_input_pin("vin"), &inFilter, 0);
+  oversamplingFilter.set_input_port(0, bandPassFilter.get(), bandPassFilter->find_dynamic_pin("vout"));
+  distortionFilter->set_input_port(distortionFilter->find_input_pin("vin"), &oversamplingFilter, 0);
+  toneShapingOverdriveFilter->set_input_port(toneShapingOverdriveFilter->find_input_pin("vin"),
+      distortionFilter.get(),
+      distortionFilter->find_dynamic_pin("vout"));
+  lowpassFilter.set_input_port(
+      0, toneShapingOverdriveFilter.get(), toneShapingOverdriveFilter->find_dynamic_pin("vout"));
+  decimationFilter.set_input_port(0, &lowpassFilter, 0);
+  lowPass2Filter->set_input_port(lowPass2Filter->find_input_pin("vin"), decimationFilter, 0);
+  bandPass2Filter->set_input_port(
+      bandPass2Filter->find_input_pin("vin"), lowPass2Filter.get(), lowPass2Filter->find_dynamic_pin("vout"));
+  outFilter.set_input_port(0, bandPass2Filter.get(), bandPass2Filter->find_dynamic_pin("vout"));
+
+  lowpassFilter.set_cut_frequency(20000);
+  lowpassFilter.set_order(6);
 }
 
-NewProjectAudioProcessor::~NewProjectAudioProcessor()
-{
-}
-
-//==============================================================================
-const juce::String NewProjectAudioProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
-
-bool NewProjectAudioProcessor::acceptsMidi() const
-{
-   #if JucePlugin_WantsMidiInput
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-bool NewProjectAudioProcessor::producesMidi() const
-{
-   #if JucePlugin_ProducesMidiOutput
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-bool NewProjectAudioProcessor::isMidiEffect() const
-{
-   #if JucePlugin_IsMidiEffect
-    return true;
-   #else
-    return false;
-   #endif
-}
-
-double NewProjectAudioProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
-}
-
-int NewProjectAudioProcessor::getNumPrograms()
-{
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
-}
-
-int NewProjectAudioProcessor::getCurrentProgram()
-{
-    return 0;
-}
-
-void NewProjectAudioProcessor::setCurrentProgram (int index)
-{
-}
-
-const juce::String NewProjectAudioProcessor::getProgramName (int index)
-{
-    return {};
-}
-
-void NewProjectAudioProcessor::changeProgramName (int index, const juce::String& newName)
+AndromedaAudioProcessor::~AndromedaAudioProcessor()
 {
 }
 
 //==============================================================================
-void NewProjectAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+const juce::String AndromedaAudioProcessor::getName() const
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+  return JucePlugin_Name;
 }
 
-void NewProjectAudioProcessor::releaseResources()
+bool AndromedaAudioProcessor::acceptsMidi() const
 {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
+#if JucePlugin_WantsMidiInput
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool AndromedaAudioProcessor::producesMidi() const
+{
+#if JucePlugin_ProducesMidiOutput
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool AndromedaAudioProcessor::isMidiEffect() const
+{
+#if JucePlugin_IsMidiEffect
+  return true;
+#else
+  return false;
+#endif
+}
+
+double AndromedaAudioProcessor::getTailLengthSeconds() const
+{
+  return 0.0;
+}
+
+int AndromedaAudioProcessor::getNumPrograms()
+{
+  return 2;
+}
+
+int AndromedaAudioProcessor::getCurrentProgram()
+{
+  return lastParameterSet;
+}
+
+void AndromedaAudioProcessor::setCurrentProgram(int index)
+{
+  if(index != lastParameterSet)
+  {
+    lastParameterSet = index;
+    if(index == 0)
+    {
+      const char* preset0
+          = "<Andromeda><PARAM id=\"distLevel\" value=\"0\" /><PARAM id=\"tone\" value=\"50\" /></Andromeda>";
+      juce::XmlDocument doc(preset0);
+
+      auto el = doc.getDocumentElement();
+      parameters.state = juce::ValueTree::fromXml(*el);
+    }
+    else if(index == 1)
+    {
+      const char* preset1
+          = "<Andromeda><PARAM id=\"distLevel\" value=\"100\" /><PARAM id=\"tone\" value=\"50\" /></Andromeda>";
+      juce::XmlDocument doc(preset1);
+
+      auto el = doc.getDocumentElement();
+      parameters.state = juce::ValueTree::fromXml(*el);
+    }
+  }
+}
+
+const juce::String AndromedaAudioProcessor::getProgramName(int index)
+{
+  if(index == 0)
+  {
+    return "Minimum distortion";
+  }
+  if(index == 0)
+  {
+    return "Maximum damage";
+  }
+  return {};
+}
+
+void AndromedaAudioProcessor::changeProgramName(int index, const juce::String& newName)
+{
+}
+
+//==============================================================================
+void AndromedaAudioProcessor::prepareToPlay(double dbSampleRate, int samplesPerBlock)
+{
+  sampleRate = std::lround(dbSampleRate);
+
+  if(sampleRate != inFilter.get_output_sampling_rate())
+  {
+    inFilter.set_input_sampling_rate(sampleRate);
+    inFilter.set_output_sampling_rate(sampleRate);
+    bandPassFilter->set_input_sampling_rate(sampleRate);
+    bandPassFilter->set_output_sampling_rate(sampleRate);
+    oversamplingFilter.set_input_sampling_rate(sampleRate);
+    oversamplingFilter.set_output_sampling_rate(sampleRate * OVERSAMPLING);
+    distortionFilter->set_input_sampling_rate(sampleRate * OVERSAMPLING);
+    distortionFilter->set_output_sampling_rate(sampleRate * OVERSAMPLING);
+    toneShapingOverdriveFilter->set_input_sampling_rate(sampleRate * OVERSAMPLING);
+    toneShapingOverdriveFilter->set_output_sampling_rate(sampleRate * OVERSAMPLING);
+    lowpassFilter.set_input_sampling_rate(sampleRate * OVERSAMPLING);
+    lowpassFilter.set_output_sampling_rate(sampleRate * OVERSAMPLING);
+    decimationFilter.set_input_sampling_rate(sampleRate * OVERSAMPLING);
+    decimationFilter.set_output_sampling_rate(sampleRate);
+    lowPass2Filter->set_input_sampling_rate(sampleRate);
+    lowPass2Filter->set_output_sampling_rate(sampleRate);
+    bandPass2Filter->set_input_sampling_rate(sampleRate);
+    bandPass2Filter->set_output_sampling_rate(sampleRate);
+    outFilter.set_input_sampling_rate(sampleRate);
+    outFilter.set_output_sampling_rate(sampleRate);
+  }
+  outFilter.dryrun(samplesPerBlock);
+}
+
+void AndromedaAudioProcessor::releaseResources()
+{
+  // When playback stops, you can use this as an opportunity to free up any
+  // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool NewProjectAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool AndromedaAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
-    return true;
-  #else
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
+#  if JucePlugin_IsMidiEffect
+  juce::ignoreUnused(layouts);
+  return true;
+#  else
+  // This is the place where you check if the layout is supported.
+  // In this template code we only support mono or stereo.
+  // Some plugin hosts, such as certain GarageBand versions, will only
+  // load plugins that support stereo bus layouts.
+  if(layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
+      && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    return false;
 
     // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-   #endif
+#    if !JucePlugin_IsSynth
+  if(layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    return false;
+#    endif
 
-    return true;
-  #endif
+  return true;
+#  endif
 }
 #endif
 
-void NewProjectAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void AndromedaAudioProcessor::processBlock(juce::AudioSampleBuffer& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+  if(*parameters.getRawParameterValue("distLevel") != old_distLevel)
+  {
+    old_distLevel = *parameters.getRawParameterValue("distLevel");
+    distortionFilter->set_parameter(0, old_distLevel * .99 / 100 + .05);
+  }
+  if(*parameters.getRawParameterValue("tone") != old_tone)
+  {
+    old_tone = *parameters.getRawParameterValue("tone");
+    toneShapingOverdriveFilter->set_parameter(0, old_tone * .99 / 100 + .05);
+  }
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+  const int totalNumInputChannels = getTotalNumInputChannels();
+  const int totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+  assert(totalNumInputChannels == totalNumOutputChannels);
+  assert(totalNumOutputChannels == 1);
+
+  inFilter.set_pointer(buffer.getReadPointer(0), buffer.getNumSamples());
+  outFilter.set_pointer(buffer.getWritePointer(0), buffer.getNumSamples());
+
+  outFilter.process(buffer.getNumSamples());
+}
+
+//==============================================================================
+bool AndromedaAudioProcessor::hasEditor() const
+{
+  return true; // (change this to false if you choose to not supply an editor)
+}
+
+juce::AudioProcessorEditor* AndromedaAudioProcessor::createEditor()
+{
+  return new AndromedaAudioProcessorEditor(*this, parameters);
+}
+
+//==============================================================================
+void AndromedaAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+{
+  auto state = parameters.copyState();
+  std::unique_ptr<juce::XmlElement> xml(state.createXml());
+  xml->setAttribute("version", "0");
+  copyXmlToBinary(*xml, destData);
+}
+
+void AndromedaAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
+{
+  std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+  if(xmlState.get() != nullptr)
+  {
+    if(xmlState->hasTagName(parameters.state.getType()))
     {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
+      if(xmlState->getStringAttribute("version") == "0")
+      {
+        parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
+      }
     }
-}
-
-//==============================================================================
-bool NewProjectAudioProcessor::hasEditor() const
-{
-    return true; // (change this to false if you choose to not supply an editor)
-}
-
-juce::AudioProcessorEditor* NewProjectAudioProcessor::createEditor()
-{
-    return new NewProjectAudioProcessorEditor (*this);
-}
-
-//==============================================================================
-void NewProjectAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
-{
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-}
-
-void NewProjectAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
-{
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+  }
 }
 
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new NewProjectAudioProcessor();
+  return new AndromedaAudioProcessor();
 }
