@@ -16,7 +16,7 @@ Here is how the parameters interact with the plugin:
 
 [square]
 * *DistLevel* changes the amount of distortion you get from the plugin by increasing the input level,
-* *Tone* handles impacted spectrum of the tone section
+* *Tone* handles impacted spectrum of the tone section.
 
 == Bugs
 
