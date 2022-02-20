@@ -15,9 +15,10 @@ PLUGIN_NAME=${PLUGIN_NAME/JucePlugin_Name/}
 PLUGIN_NAME=${PLUGIN_NAME//\"}
 PLUGIN_NAME=$(echo "${PLUGIN_NAME}" | tr -d '[:space:]')
 
+# work out the paths to the binaries
+
 PKG="installer/build-mac-signed/$PLUGIN_NAME Installer.pkg"
 
-arch -x86_64 xcrun stapler staple "${PKG}"
-spctl -a -t install --context context:primary-signature -v "${PKG}"
+arch -x86_64 xcrun notarytool submit "${PKG}" --keychain-profile "AC_PASSWORD" --wait
 
 echo "done"

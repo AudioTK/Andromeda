@@ -1,7 +1,7 @@
 Andromeda changelog
 http://www.audio-tk.com
 
-21/03/2021 - v1.0.0 initial release
+22/02/2022 - v1.0 initial release
   - Built against ATK 3.3.0
   
   
